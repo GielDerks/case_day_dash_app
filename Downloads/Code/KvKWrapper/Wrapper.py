@@ -26,6 +26,7 @@ class Wrapper(APIConfig):
             return False
         return True
 
+
     #Determine match quality of search string with response string
     #This overcomes the problem where the search call returns a company which does not match the company you want
     #For example: search "Gemeente Utrecht" gives Gereformeerd kerkgenootschap Utrecht.
@@ -50,7 +51,8 @@ class Wrapper(APIConfig):
 
         best_match = max(fuzzy_dict, key=fuzzy_dict.get)
         text = 'Best Free-Search Text Match for {} is: {}, with matching score {}'.format(self.company_name, best_match, max(fuzzy_dict.values()))
-        print(text)
+
+        self.fuzzy_match_best = max(fuzzy_dict.values())
 
         if fuzzy_dict.get(best_match) < 75:
             print("No accurate match found in KvK for this company name")
@@ -70,9 +72,10 @@ class Wrapper(APIConfig):
             r = requests.get(self.kvk_search.format(self.company_name, self.user_key))
 
             kvk_name = dict()
-
+            print(r.status_code)
             # if request is successful (200), check if json is really json and use first result and append to array.
             if r.status_code == 200:
+
 
                 if self.is_json(r.text):
 
@@ -82,7 +85,7 @@ class Wrapper(APIConfig):
 
                         items = r_json['data']['items']
 
-                        print(items)
+
 
                         best_match = self.get_fuzzy_score(items)
 
@@ -95,10 +98,10 @@ class Wrapper(APIConfig):
             #get kvk id of best match
 
             for x in items:
-                print(x, best_match)
+
                 if x['tradeNames']['shortBusinessName'].upper() == best_match:
                     kvk_id = x['kvkNumber']
-                    print(kvk_id)
+
                     break
 
             return kvk_id
@@ -110,34 +113,69 @@ class Wrapper(APIConfig):
     # For this kvk id, we want all branchNumbers
     def retrieve_kvk_id_best_match(self):
 
-        if self.best_match_kvk != False:
-            r = requests.get(self.kvk_search.format(self.best_match_kvk, self.user_key))
+        go = True
+        full_list = []
 
-            if r.status_code == 200:
-                if self.is_json(r.text):
-                    r_json = json.loads(r.text)
-                    print(r_json)
-                    if r_json:
+        count = 1
+        next_link = 'test'
+        while go == True:
+            printer = "PAGE --------------> " + str(count)
+            print(printer)
+            if self.best_match_kvk != False:
+                if count == 1:
+                    r = requests.get(self.kvk_search.format(self.best_match_kvk, self.user_key))
+                else:
+                    r = requests.get(next_link)
+                print(r.status_code)
+                if r.status_code == 200:
 
-                        items = r_json['data']['items']
+                    if self.is_json(r.text):
+                        r_json = json.loads(r.text)
 
-                        print([x['branchNumber'] for x in items if x['isBranch'] == True])
-                        return [x['branchNumber'] for x in items if x['isBranch'] == True]
+                        if r_json:
+
+                            items = r_json['data']['items']
+
+                            for x in items:
+
+                                if x['isBranch'] == True:
+                                    full_list.append(x['branchNumber'])
+
+
+                            if 'nextLink' not in r_json['data']:
+                                    go = False
+
+                            else:
+                                next_link = r_json['data']['nextLink']
+                                count += 1
+                                continue
+                        else:
+                            break
+                    else:
+                        break
+                else:
+                    break
+            else:
+                break
+
+            return full_list
 
     def profile(self):
 
         data_agg = {}
 
         for branches in self.list_of_branches:
+            print(branches)
 
             # use API RESTurl to get company info
             q = self.best_match_kvk + " " + branches
-            print('query', q)
-            request_string  = self.kvk_profile.format(branches, self.user_key)
 
-            print(request_string)
+            request_string  = self.kvk_profile.format(branches, self.user_key)
+            request_string  = self.kvk_profile.format(q, self.user_key)
 
             r = requests.get(request_string)
+
+            print(r.status_code)
 
             if r.status_code == 200 and r.text:
 
@@ -147,5 +185,9 @@ class Wrapper(APIConfig):
 
                     item = data.get('data', {}).get('items', [{}])[0]
                     data_agg[branches] = item
+                else:
+                    print('error')
+            else:
+                print('error')
 
-        self.data = data_agg
+        self.data = {'data' : data_agg, 'fuzzy_match_score' : self.fuzzy_match_best,'matched_company_name' : self.best_match_kvk}
