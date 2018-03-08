@@ -1,6 +1,8 @@
 import json
 import requests
 import warnings
+import time
+
 
 warnings.filterwarnings("ignore")
 
@@ -70,7 +72,7 @@ class Wrapper(APIConfig):
 
             # use the openkvk API to search for dossiers based on company name
             r = requests.get(self.kvk_search.format(self.company_name, self.user_key))
-
+            time.sleep(0.5)
             kvk_name = dict()
             print(r.status_code)
             # if request is successful (200), check if json is really json and use first result and append to array.
@@ -124,8 +126,10 @@ class Wrapper(APIConfig):
             if self.best_match_kvk != False:
                 if count == 1:
                     r = requests.get(self.kvk_search.format(self.best_match_kvk, self.user_key))
+                    time.sleep(0.5)
                 else:
                     r = requests.get(next_link)
+                    time.sleep(0.5)
                 print(r.status_code)
                 if r.status_code == 200:
 
@@ -140,7 +144,6 @@ class Wrapper(APIConfig):
 
                                 if x['isBranch'] == True:
                                     full_list.append(x['branchNumber'])
-
 
                             if 'nextLink' not in r_json['data']:
                                     go = False
@@ -168,26 +171,35 @@ class Wrapper(APIConfig):
             print(branches)
 
             # use API RESTurl to get company info
-            q = self.best_match_kvk + " " + branches
+            q = 'kvkNumber=' + self.best_match_kvk + "&" + 'branchnumber='+ branches
 
-            request_string  = self.kvk_profile.format(branches, self.user_key)
-            request_string  = self.kvk_profile.format(q, self.user_key)
+            try:
+                request_string  = self.kvk_profile.format(q, self.user_key)
 
-            r = requests.get(request_string)
 
-            print(r.status_code)
+                time.sleep(0.5)
+                print(request_string)
+                r = requests.get(request_string)
 
-            if r.status_code == 200 and r.text:
+                print(r.status_code)
 
-                if self.is_json(r.text):
+                if r.status_code == 200 and r.text:
 
-                    data = json.loads(r.text)
+                    if self.is_json(r.text):
 
-                    item = data.get('data', {}).get('items', [{}])[0]
-                    data_agg[branches] = item
+                        data = json.loads(r.text)
+
+                        item = data.get('data', {}).get('items', [{}])[0]
+                        data_agg[branches] = item
+                    else:
+                        print('error')
                 else:
                     print('error')
-            else:
-                print('error')
 
-        self.data = {'data' : data_agg, 'fuzzy_match_score' : self.fuzzy_match_best,'matched_company_name' : self.best_match_kvk}
+                succesfull = "True"
+
+            except:
+                print("failfailfailfailabove")
+                succesfull = "False"
+
+        self.data = {'data' : data_agg, 'fuzzy_match_score' : self.fuzzy_match_best,'matched_company_name' : self.best_match_kvk, 'succesfull' : succesfull}
