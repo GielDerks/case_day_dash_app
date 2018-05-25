@@ -53,10 +53,10 @@ class Wrapper(APIConfig):
 
         best_match = max(fuzzy_dict, key=fuzzy_dict.get)
         text = 'Best Free-Search Text Match for {} is: {}, with matching score {}'.format(self.company_name, best_match, max(fuzzy_dict.values()))
-
+        print(text)
         self.fuzzy_match_best = max(fuzzy_dict.values())
 
-        if fuzzy_dict.get(best_match) < 75:
+        if fuzzy_dict.get(best_match) < 50:
             print("No accurate match found in KvK for this company name")
             return False
         else:
@@ -83,11 +83,16 @@ class Wrapper(APIConfig):
 
                     r_json = json.loads(r.text)
 
+                    print(r_json)
+
+                    total_items = r_json['data']['totalItems']
+
+                    if int(total_items) > 15:
+                        return "Too many items"
+
                     if r_json:
 
                         items = r_json['data']['items']
-
-
 
                         best_match = self.get_fuzzy_score(items)
 
@@ -103,7 +108,8 @@ class Wrapper(APIConfig):
 
                 if x['tradeNames']['shortBusinessName'].upper() == best_match:
                     kvk_id = x['kvkNumber']
-
+                elif x['tradeNames']['businessName'].upper() == best_match:
+                    kvk_id = x['kvkNumber']
                     break
 
             return kvk_id
@@ -114,6 +120,9 @@ class Wrapper(APIConfig):
     # At this point we have the right kvk id.
     # For this kvk id, we want all branchNumbers
     def retrieve_kvk_id_best_match(self):
+
+        if self.best_match_kvk == "Too many items":
+            return "Too many items"
 
         go = True
         full_list = []
@@ -165,6 +174,9 @@ class Wrapper(APIConfig):
 
     def profile(self):
 
+        if self.best_match_kvk == "Too many items":
+            self.data = {'data' : "Too many items"}
+            return
         data_agg = {}
 
         for branches in self.list_of_branches:
@@ -191,6 +203,7 @@ class Wrapper(APIConfig):
 
                         item = data.get('data', {}).get('items', [{}])[0]
                         data_agg[branches] = item
+                        data_agg[branches]['succesfull_profile'] = 'True'
                     else:
                         print('error')
                 else:
@@ -199,7 +212,9 @@ class Wrapper(APIConfig):
                 succesfull = "True"
 
             except:
+
                 print("failfailfailfailabove")
+
                 succesfull = "False"
 
         self.data = {'data' : data_agg, 'fuzzy_match_score' : self.fuzzy_match_best,'matched_company_name' : self.best_match_kvk, 'succesfull' : succesfull}
