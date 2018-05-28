@@ -13,9 +13,9 @@ server = app.server
 
 
 # read data
-claim_data = pd.read_csv("claim_data.csv")
-X_validation = pd.read_csv("X_validation.csv")
-policy_data = pd.read_csv("policy_data.csv")
+# claim_data = pd.read_csv("claim_data.csv")
+# X_validation = pd.read_csv("X_validation.csv")
+# policy_data = pd.read_csv("policy_data.csv")
 
 
 # fraud_dataset
@@ -54,22 +54,38 @@ def get_logo():
     logo = html.Div([
 
         html.Div([
-            html.Img(src='https://image.ibb.co/j5vUD8/AAA.jpg', height='110', width='250')  # 529 × 234 = 2,26
-        ], className="ten columns padded"),
+            html.Img(src='https://image.ibb.co/j5vUD8/AAA.jpg',
+
+                                style={
+                             'height': '55',
+                             'width': '125'
+                         })  # 529 × 234 = 2,26
+        ], className="two columns padded"),
 
     ], className="row gs-header")
     return logo
 
+# includes page/full view
+# def get_logo():
+#     logo = html.Div([
+#             html.Img(src='https://image.ibb.co/j5vUD8/AAA.jpg', style={
+#                              'height': '110',
+#                              'width': '250',
+#                              'float': 'right',
+#                              'position': 'absolute',
+#                          })  # 529 × 234 = 2,26
+#         ])
+#     return logo
 
 def get_header():
     header = html.Div([
 
         html.Div([
             html.H5(
-                'Triple A - Fraud Analytics Case Study')
+                'Fraud Analytics Case Study')
         ], className="twelve columns padded")
 
-    ], className="row gs-header gs-text-header")
+    ], className="row gs-header gs-text-header padded")
     return header
 
 
@@ -79,7 +95,7 @@ def get_menu():
 
         dcc.Link('Introduction   ', href='/overview', className="tab first"),
 
-        dcc.Link('Price Performance   ', href='/price-performance', className="tab"),
+        dcc.Link('Machine Learning Workflow  ', href='/price-performance', className="tab"),
 
         dcc.Link('Portfolio & Management   ', href='/portfolio-management', className="tab"),
 
@@ -100,8 +116,10 @@ overview = html.Div([  # page 1
         html.Div([
 
             # Header
-            get_logo(),
+
             get_header(),
+            #get_logo(),
+
             html.Br([]),
             get_menu(),
 
@@ -110,363 +128,90 @@ overview = html.Div([  # page 1
             html.Div([
 
                 html.Div([
-                    html.H6('Introduction',
+
+                    html.H6('1. Introduction',
                             className="gs-header gs-text-header padded"),
 
                     html.Br([]),
 
                     html.P("\
-                            In this case we focus on a major issue for insurance companies: Fraudulent Claims. \
-                            Fraud, or criminal deception, is a costly problem for insurance companies and leads to losses of over billions of Euros. \
-                            The cost of fraud is twofold:  1. The direct cost of covering expenses for fraudulent claims 2. The cost of fraud prevention \
-                            and detection. Furthermore, these fraudulent also have a _social-economic impact_ since the insurance companies costs \
-                            for fraud are passed on to the policy holder by means of a higher premium. Insurance companies want to keep their premiums, \
-                            for similar products, as low as possible compared to competitors in order to attract new customers and increase marketshare. \
-                            Therefore, fraud detection is a very important subject for insurance companies."),
+                            In this case we focus on a major issue for insurance companies: Fraudulent Claims."),
+                    html.P("\
+        Fraud, or criminal deception, is a costly problem for insurance companies and leads to losses of over billions of Euros."),
+                    html.P("\
+        The cost of fraud is twofold:"),
+
+                    html.I("1. The direct cost of covering expenses for fraudulent claims"),
+                    html.Br([]),
+                    html.I("2. The cost of fraud prevention and detection."),
+
+                    html.P("\
+        Furthermore, these fraudulent also have a social-economic impact since the insurance companies costs or fraud are passed on to the policy holder by means of a higher premium \
+        Insurance companies want to keep their premiums, for similar products, as low as possible compared to competitors in order to \
+        attract new customers and increase marketshare. Therefore, fraud detection is a very important subject for insurance companies."),
 
                 ], className="six columns"),
 
                 html.Div([
-                    html.H6(["Fund Facts"],
+                    html.H6(["2. About Fraud Detection"],
                             className="gs-header gs-table-header padded"),
-                    html.Table(make_dash_table(df_fund_facts))
+                    html.Br([]),
+                    html.P("\
+                    Fraud detection systems based on data have been around for while. \
+                    However, substantional improvements have been made in recents years with the introduction of new and improved fraud detection algorithms."),
+                    html.P("\
+                    Furthermore, insurers have become more and more data-driven organizations collecting large amounts of data. \
+                    This data can be collected from their own systems, but also from open data sources or bought from data providers. \
+                    The current challenge for insurers is to leverage the new advancements in machine learning and \
+                    the ever-growing data available in order to improve their fraud detection systems."),
+
                 ], className="six columns"),
 
-            ], className="row "),
+            ], className="row"),
 
             # Row 4
 
             html.Div([
 
                 html.Div([
-                    html.H6('Average annual performance',
+                    html.H6('3. About the Case',
                             className="gs-header gs-text-header padded"),
-                    dcc.Graph(
-                        id = "graph-1",
-                        figure={
-                            'data': [
-                                go.Bar(
-                                    x = ["1 Year", "3 Year", "5 Year", "10 Year", "41 Year"],
-                                    y = ["21.67", "11.26", "15.62", "8.37", "11.11"],
-                                    marker = {
-                                      "color": "rgb(53, 83, 255)",
-                                      "line": {
-                                        "color": "rgb(255, 255, 255)",
-                                        "width": 2
-                                      }
-                                    },
-                                    name = "500 Index Fund",
-                                    type = "bar"
-                                ),
-                                go.Bar(
-                                    x = ["1 Year", "3 Year", "5 Year", "10 Year", "41 Year"],
-                                    y = ["21.83", "11.41", "15.79", "8.50"],
-                                    marker = {
-                                      "color": "rgb(255, 225, 53)",
-                                      "line": {
-                                        "color": "rgb(255, 255, 255)",
-                                        "width": 2
-                                        }
-                                    },
-                                    name = "S&P 500 Index",
-                                    type = "bar"
-                                ),
-                            ],
-                            'layout': go.Layout(
-                                autosize = False,
-                                bargap = 0.35,
-                                font = {
-                                  "family": "Raleway",
-                                  "size": 10
-                                },
-                                height = 200,
-                                hovermode = "closest",
-                                legend = {
-                                  "x": -0.0228945952895,
-                                  "y": -0.189563896463,
-                                  "orientation": "h",
-                                  "yanchor": "top"
-                                },
-                                margin = {
-                                  "r": 0,
-                                  "t": 20,
-                                  "b": 10,
-                                  "l": 10
-                                },
-                                showlegend = True,
-                                title = "",
-                                width = 340,
-                                xaxis = {
-                                  "autorange": True,
-                                  "range": [-0.5, 4.5],
-                                  "showline": True,
-                                  "title": "",
-                                  "type": "category"
-                                },
-                                yaxis = {
-                                  "autorange": True,
-                                  "range": [0, 22.9789473684],
-                                  "showgrid": True,
-                                  "showline": True,
-                                  "title": "",
-                                  "type": "linear",
-                                  "zeroline": False
-                                }
-                            )
-                        },
-                        config={
-                            'displayModeBar': False
-                        }
-                    )
+                    html.Br([]),
+
+                html.P("\
+                We'll work with a dataset describing insurance transactions publicly available at Oracle Database Online Documentation (2015). \
+                The dataset with claims data from an car insurance company that contains both fraudulent and valid claims. \
+                This dataset is often used in scientific papers in the fraud prediction domain. \
+                The data is from an American car insurance company and dates from around the year 2000."),
+
+                html.P("\
+                            In this case you are going to develop a prototype of a predictive machine learning model that can be embedded in a car insurer's fraud detection system."),
+
+                html.P("\
+                For the next two hours, You will:"),
+
+                html.I("\
+                Be divided in teams"),
+                html.Br([]),
+                html.I("\
+                Develop a model that, as accurately as possible, identifies fraudulent claims"),
+                html.Br([]),
+                html.I("\
+                Compare your model's performance to other groups."),
+                html.Br([]),
+                html.I("\
+                Maybe win a prize :) "),
+                html.Br([]),
+
                 ], className="six columns"),
 
                 html.Div([
-                    html.H6("Hypothetical growth of $10,000",
+                    html.H6("4. The Data Set",
                             className="gs-header gs-table-header padded"),
-                    dcc.Graph(
-                        id="grpah-2",
-                        figure={
-                            'data': [
-                                go.Scatter(
-                                    x = ["2008", "2009", "2010", "2011", "2012", "2013", "2014", "2015", "2016", "2017", "2018"],
-                                    y = ["10000", "7500", "9000", "10000", "10500", "11000", "14000", "18000", "19000", "20500", "24000"],
-                                    line = {"color": "rgb(53, 83, 255)"},
-                                    mode = "lines",
-                                    name = "500 Index Fund Inv"
-                                )
-                            ],
-                            'layout': go.Layout(
-                                autosize = False,
-                                title = "",
-                                font = {
-                                  "family": "Raleway",
-                                  "size": 10
-                                },
-                                height = 200,
-                                width = 340,
-                                hovermode = "closest",
-                                legend = {
-                                  "x": -0.0277108433735,
-                                  "y": -0.142606516291,
-                                  "orientation": "h"
-                                },
-                                margin = {
-                                  "r": 20,
-                                  "t": 20,
-                                  "b": 20,
-                                  "l": 50
-                                },
-                                showlegend = True,
-                                xaxis = {
-                                  "autorange": True,
-                                  "linecolor": "rgb(0, 0, 0)",
-                                  "linewidth": 1,
-                                  "range": [2008, 2018],
-                                  "showgrid": False,
-                                  "showline": True,
-                                  "title": "",
-                                  "type": "linear"
-                                },
-                                yaxis = {
-                                  "autorange": False,
-                                  "gridcolor": "rgba(127, 127, 127, 0.2)",
-                                  "mirror": False,
-                                  "nticks": 4,
-                                  "range": [0, 30000],
-                                  "showgrid": True,
-                                  "showline": True,
-                                  "ticklen": 10,
-                                  "ticks": "outside",
-                                  "title": "$",
-                                  "type": "linear",
-                                  "zeroline": False,
-                                  "zerolinewidth": 4
-                                }
-                            )
-                        },
-                        config={
-                            'displayModeBar': False
-                        }
-                    )
+                    html.P(" sometext"),
                 ], className="six columns"),
 
             ], className="row "),
-
-            # Row 5
-
-            html.Div([
-
-                html.Div([
-                    html.H6('Price & Performance (%)',
-                            className="gs-header gs-table-header padded"),
-                    html.Table(make_dash_table(df_price_perf))
-                ], className="six columns"),
-
-                html.Div([
-                    html.H6("Risk Potential",
-                            className="gs-header gs-table-header padded"),
-                    dcc.Graph(
-                        id='graph-3',
-                        figure = {
-                            'data': [
-                                go.Scatter(
-                                    x = ["0", "0.18", "0.18", "0"],
-                                    y = ["0.2", "0.2", "0.4", "0.2"],
-                                    fill = "tozerox",
-                                    fillcolor = "rgba(31, 119, 180, 0.2)",
-                                    hoverinfo = "none",
-                                    line = {"width": 0},
-                                    mode = "lines",
-                                    name = "B",
-                                    showlegend = False
-                                ),
-                                go.Scatter(
-                                    x = ["0.2", "0.38", "0.38", "0.2", "0.2"],
-                                    y = ["0.2", "0.2", "0.6", "0.4", "0.2"],
-                                    fill = "tozerox",
-                                    fillcolor = "rgba(31, 119, 180, 0.4)",
-                                    hoverinfo = "none",
-                                    line = {"width": 0},
-                                    mode = "lines",
-                                    name = "D",
-                                    showlegend = False
-                                ),
-                                go.Scatter(
-                                    x = ["0.4", "0.58", "0.58", "0.4", "0.4"],
-                                    y = ["0.2", "0.2", "0.8", "0.6", "0.2"],
-                                    fill = "tozerox",
-                                    fillcolor = "rgba(31, 119, 180, 0.6)",
-                                    hoverinfo = "none",
-                                    line = {"width": 0},
-                                    mode = "lines",
-                                    name = "F",
-                                    showlegend = False
-                                ),
-                                go.Scatter(
-                                    x = ["0.6", "0.78", "0.78", "0.6", "0.6"],
-                                    y = ["0.2", "0.2", "1", "0.8", "0.2"],
-                                    fill = "tozerox",
-                                    fillcolor = "rgb(31, 119, 180)",
-                                    hoverinfo = "none",
-                                    line = {"width": 0},
-                                    mode = "lines",
-                                    name = "H",
-                                    showlegend = False
-                                ),
-                                go.Scatter(
-                                    x = ["0.8", "0.98", "0.98", "0.8", "0.8"],
-                                    y = ["0.2", "0.2", "1.2", "1", "0.2"],
-                                    fill = "tozerox",
-                                    fillcolor = "rgba(31, 119, 180, 0.8)",
-                                    hoverinfo = "none",
-                                    line = {"width": 0},
-                                    mode = "lines",
-                                    name = "J",
-                                    showlegend = False
-                                ),
-                            ],
-                            'layout': go.Layout(
-                                title = "",
-                                annotations = [
-                                    {
-                                      "x": 0.69,
-                                      "y": 0.6,
-                                      "font": {
-                                        "color": "rgb(31, 119, 180)",
-                                        "family": "Raleway",
-                                        "size": 30
-                                      },
-                                      "showarrow": False,
-                                      "text": "<b>4</b>",
-                                      "xref": "x",
-                                      "yref": "y"
-                                    },
-                                    {
-                                      "x": 0.0631034482759,
-                                      "y": -0.04,
-                                      "align": "left",
-                                      "font": {
-                                        "color": "rgb(44, 160, 44)",
-                                        "family": "Raleway",
-                                        "size": 10
-                                      },
-                                      "showarrow": False,
-                                      "text": "<b>Less risk<br>Less reward</b>",
-                                      "xref": "x",
-                                      "yref": "y"
-                                    },
-                                    {
-                                      "x": 0.92125,
-                                      "y": -0.04,
-                                      "align": "right",
-                                      "font": {
-                                        "color": "rgb(214, 39, 40)",
-                                        "family": "Raleway",
-                                        "size": 10
-                                      },
-                                      "showarrow": False,
-                                      "text": "<b>More risk<br>More reward</b>",
-                                      "xref": "x",
-                                      "yref": "y"
-                                    }
-                                  ],
-                                  autosize = False,
-                                  height = 200,
-                                  width = 340,
-                                  hovermode = "closest",
-                                  margin = {
-                                    "r": 10,
-                                    "t": 20,
-                                    "b": 80,
-                                    "l": 10
-                                  },
-                                  shapes = [
-                                    {
-                                      "fillcolor": "rgb(255, 255, 255)",
-                                      "line": {
-                                        "color": "rgb(31, 119, 180)",
-                                        "width": 4
-                                      },
-                                      "opacity": 1,
-                                      "type": "circle",
-                                      "x0": 0.621,
-                                      "x1": 0.764,
-                                      "xref": "x",
-                                      "y0": 0.135238095238,
-                                      "y1": 0.98619047619,
-                                      "yref": "y"
-                                    }
-                                  ],
-                                  showlegend = True,
-                                  xaxis = {
-                                    "autorange": False,
-                                    "fixedrange": True,
-                                    "range": [-0.05, 1.05],
-                                    "showgrid": False,
-                                    "showticklabels": False,
-                                    "title": "<br>",
-                                    "type": "linear",
-                                    "zeroline": False
-                                  },
-                                  yaxis = {
-                                    "autorange": False,
-                                    "fixedrange": True,
-                                    "range": [-0.3, 1.6],
-                                    "showgrid": False,
-                                    "showticklabels": False,
-                                    "title": "<br>",
-                                    "type": "linear",
-                                    "zeroline": False
-                                }
-                            )
-                        },
-                        config={
-                            'displayModeBar': False
-                        }
-                    )
-                ], className="six columns"),
-
-            ], className="row ")
 
         ], className="subpage")
 
