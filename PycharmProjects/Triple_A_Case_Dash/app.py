@@ -8,15 +8,44 @@ import plotly.graph_objs as go
 import pandas as pd
 import os
 
+import dash_table_experiments as dt
+
 app = dash.Dash(__name__)
 server = app.server
 
+app.config['suppress_callback_exceptions']=True
+
+# Describe the layout, or the UI, of the app
+app.layout = html.Div([
+    dcc.Location(id='url', refresh=False),
+    html.Div(id='page-content'),
+    html.Div(dt.DataTable(rows=[{}]), style={'display': 'none'})
+])
 
 # read data
-# claim_data = pd.read_csv("claim_data.csv")
-# X_validation = pd.read_csv("X_validation.csv")
-# policy_data = pd.read_csv("policy_data.csv")
+#dataset = pd.read_csv("dataset.csv")
 
+claim_data = pd.read_csv("claim_data.csv")
+policy_data = pd.read_csv("policy_data.csv")
+
+# X_validation = pd.read_csv("X_validation.csv")
+#policy_data = pd.read_csv("policy_data.csv")
+
+trends_numbers = pd.read_excel("trend_excel_fraud.xlsx")
+
+claims_input=[]
+for x in claim_data.columns:
+    dict2 = {}
+    dict2["label"] = x
+    dict2["value"] = x
+    claims_input.append(dict2)
+
+policy_input=[]
+for x in policy_data.columns:
+    dict2 = {}
+    dict2["label"] = x
+    dict2["value"] = x
+    policy_input.append(dict2)
 
 # fraud_dataset
 
@@ -97,7 +126,7 @@ def get_menu():
 
         dcc.Link('Machine Learning Workflow  ', href='/price-performance', className="tab"),
 
-        dcc.Link('Portfolio & Management   ', href='/portfolio-management', className="tab"),
+        dcc.Link('The Data Set   ', href='/portfolio-management', className="tab"),
 
         dcc.Link('Fees & Minimums   ', href='/fees', className="tab"),
 
@@ -209,6 +238,7 @@ overview = html.Div([  # page 1
                     html.H6("4. The Data Set",
                             className="gs-header gs-table-header padded"),
                     html.P(" sometext"),
+                    html.Table(make_dash_table(trends_numbers)),
                 ], className="six columns"),
 
             ], className="row "),
@@ -391,285 +421,101 @@ portfolioManagement = html.Div([ # page 3
 
             # Header
 
-            get_logo(),
+            #get_logo(),
             get_header(),
             html.Br([]),
             get_menu(),
 
             # Row 1
 
-            html.Div([
+            html.Br([]),
 
-                html.Div([
-                    html.H6(["Portfolio"],
-                            className="gs-header gs-table-header padded")
-                ], className="twelve columns"),
-
-            ], className="row "),
-
-            # Row 2
-
-            html.Div([
-
-                html.Div([
-                    html.Strong(["Stock style"]),
-                    dcc.Graph(
-                        id='graph-5',
-                        figure={
-                            'data': [
-                                go.Scatter(
-                                    x = ["1"],
-                                    y = ["1"],
-                                    hoverinfo = "none",
-                                    marker = {
-                                        "color": ["transparent"]
-                                    },
-                                    mode = "markers",
-                                    name = "B",
-                                )
-                            ],
-                            'layout': go.Layout(
-                                title = "",
-                                annotations = [
-                                {
-                                  "x": 0.990130093458,
-                                  "y": 1.00181709504,
-                                  "align": "left",
-                                  "font": {
-                                    "family": "Raleway",
-                                    "size": 9
-                                  },
-                                  "showarrow": False,
-                                  "text": "<b>Market<br>Cap</b>",
-                                  "xref": "x",
-                                  "yref": "y"
-                                },
-                                {
-                                  "x": 1.00001816013,
-                                  "y": 1.35907755794e-16,
-                                  "font": {
-                                    "family": "Raleway",
-                                    "size": 9
-                                  },
-                                  "showarrow": False,
-                                  "text": "<b>Style</b>",
-                                  "xref": "x",
-                                  "yanchor": "top",
-                                  "yref": "y"
-                                }
-                              ],
-                              autosize = False,
-                              width = 200,
-                              height = 150,
-                              hovermode = "closest",
-                              margin = {
-                                "r": 30,
-                                "t": 20,
-                                "b": 20,
-                                "l": 30
-                              },
-                              shapes = [
-                                {
-                                  "fillcolor": "rgb(127, 127, 127)",
-                                  "line": {
-                                    "color": "rgb(0, 0, 0)",
-                                    "width": 2
-                                  },
-                                  "opacity": 0.3,
-                                  "type": "rectangle",
-                                  "x0": 0,
-                                  "x1": 0.33,
-                                  "xref": "paper",
-                                  "y0": 0,
-                                  "y1": 0.33,
-                                  "yref": "paper"
-                                },
-                                {
-                                  "fillcolor": "rgb(127, 127, 127)",
-                                  "line": {
-                                    "color": "rgb(0, 0, 0)",
-                                    "dash": "solid",
-                                    "width": 2
-                                  },
-                                  "opacity": 0.3,
-                                  "type": "rectangle",
-                                  "x0": 0.33,
-                                  "x1": 0.66,
-                                  "xref": "paper",
-                                  "y0": 0,
-                                  "y1": 0.33,
-                                  "yref": "paper"
-                                },
-                                {
-                                  "fillcolor": "rgb(127, 127, 127)",
-                                  "line": {
-                                    "color": "rgb(0, 0, 0)",
-                                    "width": 2
-                                  },
-                                  "opacity": 0.3,
-                                  "type": "rectangle",
-                                  "x0": 0.66,
-                                  "x1": 0.99,
-                                  "xref": "paper",
-                                  "y0": 0,
-                                  "y1": 0.33,
-                                  "yref": "paper"
-                                },
-                                {
-                                  "fillcolor": "rgb(127, 127, 127)",
-                                  "line": {
-                                    "color": "rgb(0, 0, 0)",
-                                    "width": 2
-                                  },
-                                  "opacity": 0.3,
-                                  "type": "rectangle",
-                                  "x0": 0,
-                                  "x1": 0.33,
-                                  "xref": "paper",
-                                  "y0": 0.33,
-                                  "y1": 0.66,
-                                  "yref": "paper"
-                                },
-                                {
-                                  "fillcolor": "rgb(127, 127, 127)",
-                                  "line": {
-                                    "color": "rgb(0, 0, 0)",
-                                    "width": 2
-                                  },
-                                  "opacity": 0.3,
-                                  "type": "rectangle",
-                                  "x0": 0.33,
-                                  "x1": 0.66,
-                                  "xref": "paper",
-                                  "y0": 0.33,
-                                  "y1": 0.66,
-                                  "yref": "paper"
-                                },
-                                {
-                                  "fillcolor": "rgb(127, 127, 127)",
-                                  "line": {
-                                    "color": "rgb(0, 0, 0)",
-                                    "width": 2
-                                  },
-                                  "opacity": 0.3,
-                                  "type": "rectangle",
-                                  "x0": 0.66,
-                                  "x1": 0.99,
-                                  "xref": "paper",
-                                  "y0": 0.33,
-                                  "y1": 0.66,
-                                  "yref": "paper"
-                                },
-                                {
-                                  "fillcolor": "rgb(127, 127, 127)",
-                                  "line": {
-                                    "color": "rgb(0, 0, 0)",
-                                    "width": 2
-                                  },
-                                  "opacity": 0.3,
-                                  "type": "rectangle",
-                                  "x0": 0,
-                                  "x1": 0.33,
-                                  "xref": "paper",
-                                  "y0": 0.66,
-                                  "y1": 0.99,
-                                  "yref": "paper"
-                                },
-                                {
-                                  "fillcolor": "rgb(255, 127, 14)",
-                                  "line": {
-                                    "color": "rgb(0, 0, 0)",
-                                    "width": 1
-                                  },
-                                  "opacity": 0.9,
-                                  "type": "rectangle",
-                                  "x0": 0.33,
-                                  "x1": 0.66,
-                                  "xref": "paper",
-                                  "y0": 0.66,
-                                  "y1": 0.99,
-                                  "yref": "paper"
-                                },
-                                {
-                                  "fillcolor": "rgb(127, 127, 127)",
-                                  "line": {
-                                    "color": "rgb(0, 0, 0)",
-                                    "width": 2
-                                  },
-                                  "opacity": 0.3,
-                                  "type": "rectangle",
-                                  "x0": 0.66,
-                                  "x1": 0.99,
-                                  "xref": "paper",
-                                  "y0": 0.66,
-                                  "y1": 0.99,
-                                  "yref": "paper"
-                                }
-                              ],
-                              xaxis = {
-                                "autorange": True,
-                                "range": [0.989694747864, 1.00064057995],
-                                "showgrid": False,
-                                "showline": False,
-                                "showticklabels": False,
-                                "title": "<br>",
-                                "type": "linear",
-                                "zeroline": False
-                              },
-                              yaxis = {
-                                "autorange": True,
-                                "range": [-0.0358637178721, 1.06395696354],
-                                "showgrid": False,
-                                "showline": False,
-                                "showticklabels": False,
-                                "title": "<br>",
-                                "type": "linear",
-                                "zeroline": False
-                              }
-                            )
-                        },
-                        config={
-                            'displayModeBar': False
-                        }
-                    )
-
-                ], className="four columns"),
-
-                html.Div([
-                    html.P("Vanguard 500 Index Fund seeks to track the performance of\
-                     a benchmark index that meaures the investment return of large-capitalization stocks."),
-                    html.P("Learn more about this portfolio's investment strategy and policy.")
-                ], className="eight columns middle-aligned"),
-
-            ], className="row "),
-
-            # Row 3
+            dcc.Dropdown(
+                id='dropdown_dataset',
+                options=[
+                    {'label': 'Claims Data Set', 'value': 'Claims Data Set'},
+                    {'label': 'Policy Data Set', 'value': 'Policy Data Set'}],
+                value='Claims Data Set'
+            ),
 
             html.Br([]),
 
             html.Div([
 
                 html.Div([
-                    html.H6(["Equity characteristics as of 01/31/2018"], className="gs-header gs-table-header tiny-header"),
-                    html.Table(make_dash_table(df_equity_char), className="tiny-header")
-                ], className=" twelve columns"),
+                    html.H6(["The Data Set"],
+                            className="gs-header gs-table-header padded")
+                ], className="twelve columns"),
 
             ], className="row "),
 
-            # Row 4
+            html.Br([]),
 
             html.Div([
-
                 html.Div([
-                    html.H6(["Equity sector diversification"], className="gs-header gs-table-header tiny-header"),
-                    html.Table(make_dash_table(df_equity_diver), className="tiny-header")
-                ], className=" twelve columns"),
+                    dt.DataTable(
+                        rows=claim_data.to_dict('records'),
+                        sortable=True,
+                        editable=False,
+                        filterable=False,
+                        #column_widths=30,
+                        #row_selectable=True,
+                        #header_row_height=30,
+                        #row_height=30,
+                        id='DataTable'),
+                ], className="twelve columns"),
+                #
+                # html.Div([
+                #     html.H6(""),
+                # ], className="one columns"),
 
             ], className="row "),
+
+            html.Br([]),
+
+            dcc.Dropdown(
+                id='dropdown_column_viz',
+                options=[claims_input
+                ],
+                value=claims_input[0]
+            ),
 
         ], className="subpage")
 
     ], className="page")
+
+
+@app.callback(
+    dash.dependencies.Output('DataTable', 'rows'),
+    [dash.dependencies.Input('dropdown_dataset', 'value')])
+def set_rows_dt(dataset):
+
+    if dataset == 'Policy Data Set':
+        return policy_data.to_dict('records')
+    else:
+        return claim_data.to_dict('records')
+
+#update columns dataset tab
+
+@app.callback(
+    dash.dependencies.Output('dropdown_column_viz', 'options'),
+    [dash.dependencies.Input('dropdown_dataset', 'value')])
+def set_columns(dataset):
+
+    if dataset == 'Policy Data Set':
+        return policy_input
+    else:
+        return claims_input
+
+@app.callback(
+    dash.dependencies.Output('dropdown_column_viz', 'value'),
+    [dash.dependencies.Input('dropdown_dataset', 'value')])
+def set_columns(dataset):
+
+    if dataset == 'Policy Data Set':
+        return policy_input[0]
+    else:
+        return claims_input[0]
 
 feesMins = html.Div([  # page 4
 
@@ -1013,12 +859,6 @@ noPage = html.Div([  # 404
 
 
 
-# Describe the layout, or the UI, of the app
-app.layout = html.Div([
-    dcc.Location(id='url', refresh=False),
-    html.Div(id='page-content')
-])
-
 # Update page
 @app.callback(dash.dependencies.Output('page-content', 'children'),
               [dash.dependencies.Input('url', 'pathname')])
@@ -1037,6 +877,7 @@ def display_page(pathname):
         return newsReviews
     else:
         return noPage
+
 
 
 external_css = ["https://cdnjs.cloudflare.com/ajax/libs/normalize/7.0.0/normalize.min.css",
