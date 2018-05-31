@@ -35,10 +35,10 @@ trends_numbers = pd.read_excel("trend_excel_fraud.xlsx")
 
 claims_input=[]
 for x in claim_data.columns:
-    dict2 = {}
-    dict2["label"] = x
-    dict2["value"] = x
-    claims_input.append(dict2)
+    dict1 = {}
+    dict1["label"] = x
+    dict1["value"] = x
+    claims_input.append(dict1)
 
 policy_input=[]
 for x in policy_data.columns:
@@ -480,10 +480,57 @@ portfolioManagement = html.Div([ # page 3
                 value=claims_input[0]
             ),
 
+            html.Br([]),
+
+            html.Div([
+                dcc.Graph(
+                    id='graph_data_viz1',
+                    style={'height': '80vh', 'width': '55vw'})
+            ], className="six columns"),
+
+            html.Br([]),
+
+
         ], className="subpage")
 
     ], className="page")
 
+## Call back graph_data_viz1
+
+@app.callback(
+    dash.dependencies.Output('graph_data_viz1', 'figure'),
+    [dash.dependencies.Input('dropdown_column_viz', 'value'),
+     dash.dependencies.Input('dropdown_dataset', 'value')])
+def update_figure_company(column, dataset):
+
+    #Bar chart met gemiddelde van sector en gemiddelde van branche met naam van de branche
+
+    # list with categorical
+
+    print(dataset, column)
+    if type(column) == dict:
+        column = column['value']
+
+
+    if dataset == 'Policy Data Set':
+        data = policy_data
+    else:
+        data = claim_data
+
+    data['count'] = 1
+
+    grouper = data.groupby(column).count().reset_index()
+    print(grouper)
+    categories = list(grouper[column])
+    values = list(grouper['count'])
+
+    return {
+            'data': [
+                {'x': categories, 'y': values, 'type': 'bar'},
+            ],
+            'layout': {'margin': {'l': 40, 'r': 40, 't': 30, 'b': 150}, 'title': 'Distribution',
+                       'yaxis' : {'title':'Count'}}
+        }
 
 @app.callback(
     dash.dependencies.Output('DataTable', 'rows'),
