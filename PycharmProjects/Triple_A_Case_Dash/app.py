@@ -2,13 +2,14 @@
 
 import dash
 from dash.dependencies import Input, Output
+import numpy as np
 import dash_core_components as dcc
 import dash_html_components as html
 import plotly.graph_objs as go
 import pandas as pd
-import os
-
+from sklearn.ensemble import RandomForestClassifier
 import dash_table_experiments as dt
+from sklearn.model_selection import cross_val_score
 
 app = dash.Dash(__name__)
 server = app.server
@@ -19,14 +20,29 @@ app.config['suppress_callback_exceptions']=True
 app.layout = html.Div([
     dcc.Location(id='url', refresh=False),
     html.Div(id='page-content'),
-    html.Div(dt.DataTable(rows=[{}]), style={'display': 'none'})
+    html.Div(dt.DataTable(rows=[{}]), style={'display': 'none'}),
+
+   # Hidden div inside the app that stores the intermediate value
+    html.Div(id='intermediate-value', style={'display': 'none'})
 ])
 
 # read data
 #dataset = pd.read_csv("dataset.csv")
 
 claim_data = pd.read_csv("claim_data.csv")
-policy_data = pd.read_csv("policy_data.csv")
+policy_data = pd.read_csv("policy_dataset_fraud.csv")
+data_load = pd.read_csv("datasetv2.csv", delimiter=';')
+y=data_load['FraudFound_P']
+del data_load['FraudFound_P']
+del data_load['PolicyNumber']
+X=pd.get_dummies(data_load)
+
+feature_choice = []
+for x in X.columns:
+    dict1 = {}
+    dict1["label"] = x
+    dict1["value"] = x
+    feature_choice.append(dict1)
 
 # X_validation = pd.read_csv("X_validation.csv")
 #policy_data = pd.read_csv("policy_data.csv")
@@ -49,23 +65,23 @@ for x in policy_data.columns:
 
 # fraud_dataset
 
-# read data for tables (one df per table)
-df_fund_facts = pd.read_csv('https://plot.ly/~bdun9/2754.csv')
-df_price_perf = pd.read_csv('https://plot.ly/~bdun9/2756.csv')
-df_current_prices = pd.read_csv('https://plot.ly/~bdun9/2753.csv')
-df_hist_prices = pd.read_csv('https://plot.ly/~bdun9/2765.csv')
-df_avg_returns = pd.read_csv('https://plot.ly/~bdun9/2793.csv')
-df_after_tax = pd.read_csv('https://plot.ly/~bdun9/2794.csv')
-df_recent_returns = pd.read_csv('https://plot.ly/~bdun9/2795.csv')
-df_equity_char = pd.read_csv('https://plot.ly/~bdun9/2796.csv')
-df_equity_diver = pd.read_csv('https://plot.ly/~bdun9/2797.csv')
-df_expenses = pd.read_csv('https://plot.ly/~bdun9/2798.csv')
-df_minimums = pd.read_csv('https://plot.ly/~bdun9/2799.csv')
-df_dividend = pd.read_csv('https://plot.ly/~bdun9/2800.csv')
-df_realized = pd.read_csv('https://plot.ly/~bdun9/2801.csv')
-df_unrealized = pd.read_csv('https://plot.ly/~bdun9/2802.csv')
+# # read data for tables (one df per table)
+# df_fund_facts = pd.read_csv('https://plot.ly/~bdun9/2754.csv')
+# df_price_perf = pd.read_csv('https://plot.ly/~bdun9/2756.csv')
+# df_current_prices = pd.read_csv('https://plot.ly/~bdun9/2753.csv')
+# df_hist_prices = pd.read_csv('https://plot.ly/~bdun9/2765.csv')
+# df_avg_returns = pd.read_csv('https://plot.ly/~bdun9/2793.csv')
+# df_after_tax = pd.read_csv('https://plot.ly/~bdun9/2794.csv')
+# df_recent_returns = pd.read_csv('https://plot.ly/~bdun9/2795.csv')
+# df_equity_char = pd.read_csv('https://plot.ly/~bdun9/2796.csv')
+# df_equity_diver = pd.read_csv('https://plot.ly/~bdun9/2797.csv')
+# df_expenses = pd.read_csv('https://plot.ly/~bdun9/2798.csv')
+# df_minimums = pd.read_csv('https://plot.ly/~bdun9/2799.csv')
+# df_dividend = pd.read_csv('https://plot.ly/~bdun9/2800.csv')
+# df_realized = pd.read_csv('https://plot.ly/~bdun9/2801.csv')
+# df_unrealized = pd.read_csv('https://plot.ly/~bdun9/2802.csv')
 
-df_graph = pd.read_csv("https://plot.ly/~bdun9/2804.csv")
+#df_graph = pd.read_csv("https://plot.ly/~bdun9/2804.csv")
 
 # reusable componenets
 def make_dash_table(df):
@@ -128,11 +144,11 @@ def get_menu():
 
         dcc.Link('The Data Set   ', href='/portfolio-management', className="tab"),
 
-        dcc.Link('Fees & Minimums   ', href='/fees', className="tab"),
+        dcc.Link('Modelling   ', href='/fees', className="tab"),
 
-        dcc.Link('Distributions   ', href='/distributions', className="tab"),
+        dcc.Link('Evaluation   ', href='/distributions', className="tab"),
 
-        dcc.Link('News & Reviews   ', href='/news-and-reviews', className="tab")
+        dcc.Link('Conclusions   ', href='/news-and-reviews', className="tab")
 
     ], className="row ")
 
@@ -250,165 +266,7 @@ overview = html.Div([  # page 1
 
 pricePerformance = html.Div([  # page 2
 
-
-        html.Div([
-
-            # Header
-            get_logo(),
-            get_header(),
-            html.Br([]),
-            get_menu(),
-
-            # Row ``
-
-            html.Div([
-
-                html.Div([
-                    html.H6(["Current Prices"],
-                            className="gs-header gs-table-header padded"),
-                    html.Table(make_dash_table(df_current_prices))
-
-                ], className="six columns"),
-
-                html.Div([
-                    html.H6(["Historical Prices"],
-                            className="gs-header gs-table-header padded"),
-                    html.Table(make_dash_table(df_hist_prices))
-                ], className="six columns"),
-
-            ], className="row "),
-
-            # Row 2
-
-            html.Div([
-
-                html.Div([
-                    html.H6("Performance",
-                            className="gs-header gs-table-header padded"),
-                    dcc.Graph(
-                        id='graph-4',
-                        figure={
-                            'data': [
-                                go.Scatter(
-                                    x = df_graph['Date'],
-                                    y = df_graph['Vanguard 500 Index Fund'],
-                                    line = {"color": "rgb(53, 83, 255)"},
-                                    mode = "lines",
-                                    name = "Vanguard 500 Index Fund"
-                                ),
-                                go.Scatter(
-                                    x = df_graph['Date'],
-                                    y = df_graph['MSCI EAFE Index Fund (ETF)'],
-                                    line = {"color": "rgb(255, 225, 53)"},
-                                    mode = "lines",
-                                    name = "MSCI EAFE Index Fund (ETF)"
-                                )
-                            ],
-                            'layout': go.Layout(
-                                autosize = False,
-                                width = 700,
-                                height = 200,
-                                font = {
-                                    "family": "Raleway",
-                                    "size": 10
-                                  },
-                                 margin = {
-                                    "r": 40,
-                                    "t": 40,
-                                    "b": 30,
-                                    "l": 40
-                                  },
-                                  showlegend = True,
-                                  titlefont = {
-                                    "family": "Raleway",
-                                    "size": 10
-                                  },
-                                  xaxis = {
-                                    "autorange": True,
-                                    "range": ["2007-12-31", "2018-03-06"],
-                                    "rangeselector": {"buttons": [
-                                        {
-                                          "count": 1,
-                                          "label": "1Y",
-                                          "step": "year",
-                                          "stepmode": "backward"
-                                        },
-                                        {
-                                          "count": 3,
-                                          "label": "3Y",
-                                          "step": "year",
-                                          "stepmode": "backward"
-                                        },
-                                        {
-                                          "count": 5,
-                                          "label": "5Y",
-                                          "step": "year"
-                                        },
-                                        {
-                                          "count": 10,
-                                          "label": "10Y",
-                                          "step": "year",
-                                          "stepmode": "backward"
-                                        },
-                                        {
-                                          "label": "All",
-                                          "step": "all"
-                                        }
-                                      ]},
-                                    "showline": True,
-                                    "type": "date",
-                                    "zeroline": False
-                                  },
-                                  yaxis = {
-                                    "autorange": True,
-                                    "range": [18.6880162434, 278.431996757],
-                                    "showline": True,
-                                    "type": "linear",
-                                    "zeroline": False
-                                  }
-                            )
-                        },
-                        config={
-                            'displayModeBar': False
-                        }
-                    )
-                ], className="twelve columns")
-
-            ], className="row "),
-
-            # Row 3
-
-            html.Div([
-
-                html.Div([
-                    html.H6(["Average annual returns--updated monthly as of 02/28/2018"], className="gs-header gs-table-header tiny-header"),
-                    html.Table(make_dash_table(df_avg_returns), className="tiny-header")
-                ], className=" twelve columns"),
-
-            ], className="row "),
-
-            # Row 4
-
-            html.Div([
-
-                html.Div([
-                    html.H6(["After-tax returns--updated quarterly as of 12/31/2017"], className="gs-header gs-table-header tiny-header"),
-                    html.Table(make_dash_table(df_after_tax), className="tiny-header")
-                ], className=" twelve columns"),
-
-            ], className="row "),
-
-            # Row 5
-
-            html.Div([
-
-                html.Div([
-                    html.H6(["Recent investment returns"], className="gs-header gs-table-header tiny-header"),
-                    html.Table(make_dash_table(df_recent_returns), className="tiny-header")
-                ], className=" twelve columns"),
-
-            ], className="row "),
-
+    html.Div([
         ], className="subpage")
 
     ], className="page")
@@ -428,6 +286,23 @@ portfolioManagement = html.Div([ # page 3
 
             # Row 1
 
+            html.Div([
+
+                html.Div([
+                    html.H6(["The Data Set"],
+                            className="gs-header gs-table-header padded")
+                ], className="twelve columns"),
+
+            ], className="row "),
+
+            html.P("The insurers administration system consists of two datasets. The first dataset (Policy Data Set) contains information about the policy and contains 14 columns and 49128 records. Some of the variables are for example: The brand of the car, the policy holder's gender and age, the price, etc. This data is all gathered by the insurance company when you subscribe to their policy."),
+            html.P("The second dataset (Claims Data Set) contains information about the claim and contains 18 columns and 12335 entries. This data is gathered by the insurance company at the moment that a policy holder files a claim. Some of the variables are for example: The date, the kind of area the accident took place, if a police report was filed, if witnesses were present, etc."),
+            html.Br([]),
+            html.P("Select a dataset in the dropdown below to show the data in the table below. The dropdown below the datatable shows all column for the chosen dataset. The left graph shows the distribution of the chosen column in the dataset. The right column shows the fraud percentage for every categorie in that column."),
+            html.P("This step in the process is called Exploratory Data Analysis (EDA). Exploratory Data Analysis (EDA) refers to using techniques to display data in such a way that interesting features will become apparent. Unlike classical methods which usually begin with an assumed model for the data, EDA techniques are used to encourage the data to suggest models that might be appropriate"),
+            html.Br([]),
+            html.H6("Which interesting pattern did you find?"),
+
             html.Br([]),
 
             dcc.Dropdown(
@@ -437,17 +312,6 @@ portfolioManagement = html.Div([ # page 3
                     {'label': 'Policy Data Set', 'value': 'Policy Data Set'}],
                 value='Claims Data Set'
             ),
-
-            html.Br([]),
-
-            html.Div([
-
-                html.Div([
-                    html.H6(["The Data Set"],
-                            className="gs-header gs-table-header padded")
-                ], className="twelve columns"),
-
-            ], className="row "),
 
             html.Br([]),
 
@@ -483,13 +347,24 @@ portfolioManagement = html.Div([ # page 3
             html.Br([]),
 
             html.Div([
-                dcc.Graph(
-                    id='graph_data_viz1',
-                    style={'height': '80vh', 'width': '55vw'})
-            ], className="six columns"),
+
+                html.Div([
+                    dcc.Graph(
+                        id='graph_data_viz1',
+                        style={'height': '55vh'})
+                ], className="six columns"),
+
+                html.Div([
+                    dcc.Graph(
+                        id='graph_data_viz2',
+                        style={'height': '55vh'})
+                ], className="six columns"),
+
+
+            ], className="row "),
+
 
             html.Br([]),
-
 
         ], className="subpage")
 
@@ -520,7 +395,7 @@ def update_figure_company(column, dataset):
     data['count'] = 1
 
     grouper = data.groupby(column).count().reset_index()
-    print(grouper)
+    #print(grouper)
     categories = list(grouper[column])
     values = list(grouper['count'])
 
@@ -528,10 +403,50 @@ def update_figure_company(column, dataset):
             'data': [
                 {'x': categories, 'y': values, 'type': 'bar'},
             ],
-            'layout': {'margin': {'l': 40, 'r': 40, 't': 30, 'b': 150}, 'title': 'Distribution',
+            'layout': {'margin': {'l': 40, 'r': 40, 't': 30, 'b': 150}, 'title': 'Category Distribution',
                        'yaxis' : {'title':'Count'}}
         }
 
+# Callback graph_data_viz
+@app.callback(
+    dash.dependencies.Output('graph_data_viz2', 'figure'),
+    [dash.dependencies.Input('dropdown_column_viz', 'value'),
+     dash.dependencies.Input('dropdown_dataset', 'value')])
+def update_figure_company(column, dataset):
+
+    #Bar chart met gemiddelde van sector en gemiddelde van branche met naam van de branche
+
+    # list with categorical
+
+    print(dataset, column)
+    if type(column) == dict:
+        column = column['value']
+
+
+    if dataset == 'Policy Data Set':
+        data = policy_data
+    else:
+        data = claim_data
+
+    data['count'] = 1
+
+    grouper = data.groupby(column).sum().reset_index()
+    print(grouper)
+
+    categories = grouper['FraudFound_P'] / grouper['count'] * 100
+    print(categories)
+    values = list(categories)
+    categories = list(grouper[column])
+
+    return {
+            'data': [
+                {'x': categories, 'y': values, 'type': 'bar'},
+            ],
+            'layout': {'margin': {'l': 40, 'r': 40, 't': 30, 'b': 150}, 'title': 'Distribution of Fraud Cases per Categorie',
+                       'yaxis' : {'title':'Percentage of total claims marked as Fraudulent %'}}
+        }
+
+# Callback DataTable
 @app.callback(
     dash.dependencies.Output('DataTable', 'rows'),
     [dash.dependencies.Input('dropdown_dataset', 'value')])
@@ -570,7 +485,7 @@ feesMins = html.Div([  # page 4
 
             # Header
 
-            get_logo(),
+            #get_logo(),
             get_header(),
             html.Br([]),
             get_menu(),
@@ -580,219 +495,142 @@ feesMins = html.Div([  # page 4
             html.Div([
 
                 html.Div([
-                    html.H6(["Expenses"],
+                    html.H6(["Feature Selection"],
                             className="gs-header gs-table-header padded")
                 ], className="twelve columns"),
 
             ], className="row "),
 
-            # Row 2
+            html.Br([]),
+
+            html.P('Feature selection is: \
+                    Selecting the variables which will be used in the model Feature engineering is: \
+                    Creating new features that make machine learning algorithms workFeature engineering is \
+                    fundamental to the application of machine learning, and is both difficult and expensive. \
+                    Coming up with features is difficult, time-consuming and requires expert knowledge.'),
+
+            html.P('The features in your data are important to the predictive models you use and will influence the results you are going to achieve. \
+                    The quality and quantity of the features will have great influence on whether the model is good or not'),
+
+            html.P('Some of the steps in feature engineering: \
+                    1. Brainstorming or Testing features \
+                    2. Deciding what features to create \
+                    3. Creating features \
+                    4. Checking how the features work with your model \
+                    5. Improving your features if needed \
+                    6 . Go back to brainstorming/creating more features until the work is do'),
+
 
             html.Div([
 
                 html.Div([
-                    html.Strong(),
-                    html.Table(make_dash_table(df_expenses)),
-                    html.H6(["Minimums"],
-                            className="gs-header gs-table-header padded"),
-                    html.Table(make_dash_table(df_minimums))
+                    dcc.Dropdown(
+                        id='dropdown_feature_selection',
+
+                        options=[
+                            {'label': '5', 'value' : '5'},
+                            {'label':'10', 'value' :  '10'},
+                            {'label':'25', 'value' :  '25'},
+                            {'label':'50', 'value' :  '50'},
+                            {'label':'75', 'value' : '75'},
+                            {'label':'100', 'value' :  '100'},
+                            {'label':'150', 'value' :  '150'},
+                            {'label':'200', 'value' :  '200'},
+                            {'label':'250', 'value' :  '250'},
+                        ],
+                        value='10')
                 ], className="six columns"),
 
                 html.Div([
-                    html.Br([]),
-                    html.Strong("Fees on $10,000 invested over 10 years"),
-                    dcc.Graph(
-                        id = 'graph-6',
-                        figure = {
-                            'data': [
-                                go.Bar(
-                                    x = ["Category Average", "This fund"],
-                                    y = ["2242", "329"],
-                                    marker = {"color": "rgb(53, 83, 255)"},
-                                    name = "A"
-                                ),
-                                go.Bar(
-                                    x = ["This fund"],
-                                    y = ["1913"],
-                                    marker = {"color": "#ADAAAA"},
-                                    name = "B"
-                                )
-                            ],
-                            'layout': go.Layout(
-                                annotations = [
-                                    {
-                                      "x": -0.0111111111111,
-                                      "y": 2381.92771084,
-                                      "font": {
-                                        "color": "rgb(0, 0, 0)",
-                                        "family": "Raleway",
-                                        "size": 10
-                                      },
-                                      "showarrow": False,
-                                      "text": "$2,242",
-                                      "xref": "x",
-                                      "yref": "y"
-                                    },
-                                    {
-                                      "x": 0.995555555556,
-                                      "y": 509.638554217,
-                                      "font": {
-                                        "color": "rgb(0, 0, 0)",
-                                        "family": "Raleway",
-                                        "size": 10
-                                      },
-                                      "showarrow": False,
-                                      "text": "$329",
-                                      "xref": "x",
-                                      "yref": "y"
-                                    },
-                                    {
-                                      "x": 0.995551020408,
-                                      "y": 1730.32432432,
-                                      "font": {
-                                        "color": "rgb(0, 0, 0)",
-                                        "family": "Raleway",
-                                        "size": 10
-                                      },
-                                      "showarrow": False,
-                                      "text": "You save<br><b>$1,913</b>",
-                                      "xref": "x",
-                                      "yref": "y"
-                                    }
-                                  ],
-                                  autosize = False,
-                                  height = 150,
-                                  width = 340,
-                                  bargap = 0.4,
-                                  barmode = "stack",
-                                  hovermode = "closest",
-                                  margin = {
-                                    "r": 40,
-                                    "t": 20,
-                                    "b": 20,
-                                    "l": 40
-                                  },
-                                  showlegend = False,
-                                  title = "",
-                                  xaxis = {
-                                    "autorange": True,
-                                    "range": [-0.5, 1.5],
-                                    "showline": True,
-                                    "tickfont": {
-                                      "family": "Raleway",
-                                      "size": 10
-                                    },
-                                    "title": "",
-                                    "type": "category",
-                                    "zeroline": False
-                                  },
-                                  yaxis = {
-                                    "autorange": False,
-                                    "mirror": False,
-                                    "nticks": 3,
-                                    "range": [0, 3000],
-                                    "showgrid": True,
-                                    "showline": True,
-                                    "tickfont": {
-                                      "family": "Raleway",
-                                      "size": 10
-                                    },
-                                    "tickprefix": "$",
-                                    "title": "",
-                                    "type": "linear",
-                                    "zeroline": False
-                                  }
-                            )
-                        },
-                        config={
-                            'displayModeBar': False
-                        }
+                    dcc.Dropdown(
+                        id='chosen_features',
+                        options=feature_choice,
+                        multi=True,
+                        value=['Age', 'Year']
                     )
                 ], className="six columns"),
 
             ], className="row "),
 
-            # Row 3
 
-            html.Div([
-
-                html.Div([
-                    html.H6(["Fees"],
-                            className="gs-header gs-table-header padded"),
-
-                    html.Br([]),
-
-                    html.Div([
-
-                        html.Div([
-                            html.Strong(["Purchase fee"])
-                        ], className="three columns right-aligned"),
-
-                        html.Div([
-                            html.P(["None"])
-                        ], className="nine columns")
+            html.Br([]),
 
 
-                    ], className="row "),
-
-                    html.Div([
-
-                        html.Div([
-                            html.Strong(["Redemption fee"])
-                        ], className="three columns right-aligned"),
-
-                        html.Div([
-                            html.P(["None"])
-                        ], className="nine columns")
-
-                    ], className="row "),
-
-                    html.Div([
-
-                        html.Div([
-                            html.Strong(["12b-1 fee"])
-                        ], className="three columns right-aligned"),
-
-                        html.Div([
-                            html.P(["None"])
-                        ], className="nine columns")
-
-                    ], className="row "),
-
-                    html.Div([
-
-                        html.Div([
-                            html.Strong(["Account service fee"])
-                        ], className="three columns right-aligned"),
-
-                        html.Div([
-                            html.Strong(["Nonretirement accounts, traditional IRAs, Roth IRAs, UGMAs/UTMAs, SEP-IRAs, and education savings accounts (ESAs)"]),
-                            html.P(["We charge a $20 annual account service fee for each Vanguard Brokerage Account, as well as each individual Vanguard mutual fund holding with a balance of less than $10,000 in an account. This fee does not apply if you sign up for account access on vanguard.com and choose electronic delivery of statements, confirmations, and Vanguard fund reports and prospectuses. This fee also does not apply to members of Flagship Select™, Flagship®, Voyager Select®, and Voyager® Services."]),
-                            html.Br([]),
-                            html.Strong(["SIMPLE IRAs"]),
-                            html.P(["We charge participants a $25 annual account service fee for each fund they hold in their Vanguard SIMPLE IRA. This fee does not apply to members of Flagship Select, Flagship, Voyager Select, and Voyager Services."]),
-                            html.Br([]),
-                            html.Strong(["403(b)(7) plans"]),
-                            html.P(["We charge participants a $15 annual account service fee for each fund they hold in their Vanguard 403(b)(7) account. This fee does not apply to members of Flagship Select, Flagship, Voyager Select, and Voyager Services."]),
-                            html.Br([]),
-                            html.Strong(["Individual 401(k) plans"]),
-                            html.P(["We charge participants a $20 annual account service fee for each fund they hold in their Vanguard Individual 401(k) account. This fee will be waived for all participants in the plan if at least 1 participant qualifies for Flagship Select, Flagship, Voyager Select, and Voyager Services"]),
-                            html.Br([]),
-                        ], className="nine columns")
-
-                    ], className="row ")
-
-                ], className="twelve columns")
-
-            ], className="row "),
+            dcc.Graph(
+                id='graph_feature_selection',
+                style={'height': '55vh'})
+            #],
+            # className="twelve columns"),
 
         ], className="subpage")
 
     ], className="page")
 
+
+@app.callback(
+    dash.dependencies.Output('graph_feature_selection', 'figure'),
+    [dash.dependencies.Input('dropdown_feature_selection', 'value'),
+     dash.dependencies.Input('chosen_features', 'value')])
+def feature_selection(n_estimators, features):
+
+    # Build a forest and compute the feature importances
+    forest = RandomForestClassifier(n_estimators=int(n_estimators), class_weight= 'balanced')
+    print(features)
+    print(n_estimators)
+
+    #select column based on dropdown selectors
+    if len(features) == 1 or len(features) == 0:
+        X_train = X[['Age', 'Year']]
+    else:
+        X_train = X[features]
+
+    # Fit forest
+
+    forest.fit(X_train, y)
+
+    # calculate feature importances
+
+    importances = forest.feature_importances_
+
+    # calculate std
+
+    std = np.std([tree.feature_importances_ for tree in forest.estimators_],
+                 axis=0)
+
+    indices = np.argsort(importances)[::-1]
+
+    list_col = []
+    for f in range(X_train.shape[1]):
+        list_col.append(list(X_train.columns)[indices[f]])
+        # print("%d. feature %f (%f)" % (f + 1, list(X.columns)[indices[f]], importances[indices[f]]))
+
+    list4 = []
+    std_list = []
+    for x in indices:
+        list4.append(importances[x])
+        std_list.append(std[x])
+
+    # Plot the feature importances of the forest
+    df = pd.DataFrame({"importance": list4, 'columns': list_col, 'std':std_list})
+
+
+
+    return {
+            'data': [
+                {'x': df['columns'], 'y': df["importance"], 'type': 'bar',
+                 'error_y' : {'type': 'data', 'array' : df['std'], 'visible' : True}
+                 },
+            ],
+            'layout': {'margin': {'l': 40, 'r': 40, 't': 30, 'b': 150}, 'title': 'Relative Feature Importance',
+                       'yaxis' : {'title':'Feature Importance'}}
+        }
+
+
 distributions = html.Div([  # page 5
 
         html.Div([
+
+            html.Div([
 
             # Header
 
@@ -801,96 +639,183 @@ distributions = html.Div([  # page 5
             html.Br([]),
             get_menu(),
 
+            ], className="row "),
+
             # Row 1
 
             html.Div([
 
                 html.Div([
-                    html.H6(["Distributions"],
-                            className="gs-header gs-table-header padded"),
-                    html.Strong(["Distributions for this fund are scheduled quaterly"])
+                    html.H6(["Model Building"],
+                            className="gs-header gs-table-header padded")
                 ], className="twelve columns"),
 
             ], className="row "),
 
-            # Row 2
+            html.Br([]),
 
             html.Div([
 
                 html.Div([
-                    html.Br([]),
-                    html.H6(["Dividend and capital gains distributions"], className="gs-header gs-table-header tiny-header"),
-                    html.Table(make_dash_table(df_dividend), className="tiny-header")
+                    dcc.Dropdown(
+                        id='dropdown_n_estimators_model',
+
+                        options=[
+                            {'label': '5', 'value': '5'},
+                            {'label': '10', 'value': '10'},
+                            {'label': '25', 'value': '25'},
+                            {'label': '50', 'value': '50'},
+                            {'label': '75', 'value': '75'},
+                            {'label': '100', 'value': '100'},
+                            {'label': '150', 'value': '150'},
+                            {'label': '200', 'value': '200'},
+                            {'label': '250', 'value': '250'},
+                        ],
+                        value='10')
+                ], className="three columns"),
+
+                dcc.Dropdown(
+                    id='tree_depth',
+                    options=[
+                        {'label': '5', 'value': '5'},
+                        {'label': '10', 'value': '10'},
+                        {'label': '25', 'value': '25'},
+                        {'label': '50', 'value': '50'},
+                        {'label': '75', 'value': '75'},
+                        {'label': '100', 'value': '100'},
+                        {'label': '150', 'value': '150'},
+                        {'label': '200', 'value': '200'},
+                        {'label': '250', 'value': '250'},
+                    ],
+                    value='10')
+            ], className="three columns"),
+
+
+                html.Div([
+                    dcc.Dropdown(
+                        id='chosen_features_model',
+                        options=feature_choice,
+                        multi=True,
+                        value=['Age', 'Year']
+                    )
+                ], className="six columns"),
+
+         #   ], className="row "),
+
+            html.Div([
+
+                html.Div([
+
+                    dcc.Slider(
+                        id='max_features_slider',
+                        min=2,
+                        max=150,
+                        step=1,
+                        value=2,
+                    )
+                ], className="four columns"),
+
+                html.Div([
+
+                    dcc.Dropdown(
+                        id='cross_validation',
+                        options=[
+                            {'label': '5', 'value': '5'},
+                            {'label': '10', 'value': '10'}],
+                        value='10',
+                    )
+                ], className="four columns"),
+
+
+                html.Div([
+
+                    dcc.Slider(
+                        id='max_leaf_nodes',
+                        min=2,
+                        max=150,
+                        step=1,
+                        value=50,
+                    )
+                ], className="four columns"),
+
+            html.Div([
+                html.Div([
+                    dt.DataTable(
+                        rows=pd.DataFrame({'test': [0,0,0]}).to_dict('records'),
+
+                        sortable=True,
+                        editable=False,
+                        filterable=False,
+
+                        id='DataTable_cv'),
+
                 ], className="twelve columns"),
 
             ], className="row "),
-
-            # Row 3
-
-            html.Div([
-
-                html.Div([
-                    html.H6(["Realized/unrealized gains as of 01/31/2018"], className="gs-header gs-table-header tiny-header")
-                ], className=" twelve columns")
-
-            ], className="row "),
-
-            # Row 4
-
-            html.Div([
-
-                html.Div([
-                    html.Table(make_dash_table(df_realized))
-                ], className="six columns"),
-
-                html.Div([
-                    html.Table(make_dash_table(df_unrealized))
-                ], className="six columns"),
 
             ], className="row "),
 
         ], className="subpage")
 
     ], className="page")
+
+@app.callback(
+    dash.dependencies.Output('DataTable_cv', 'rows'),
+    [dash.dependencies.Input('max_leaf_nodes', 'value'),
+     dash.dependencies.Input('max_depth_slider', 'value'),
+     dash.dependencies.Input('max_features_slider', 'value'),
+     dash.dependencies.Input('chosen_features_model', 'value'),
+     dash.dependencies.Input('dropdown_n_estimators_model', 'value'),
+     dash.dependencies.Input('cross_validation', 'value')])
+def run_model(max_leaf_nodes, max_depth_slider, max_features_slider, chosen_features_model, dropdown_n_estimators_model, cross_validation):
+    print(max_leaf_nodes, max_depth_slider, max_features_slider, chosen_features_model, dropdown_n_estimators_model, cross_validation)
+    print("hoi")
+    # Build a forest and compute the feature importances
+    forest = RandomForestClassifier(n_estimators=int(dropdown_n_estimators_model), class_weight='balanced')
+
+    #select column based on dropdown selectors
+    if len(chosen_features_model) == 1 or len(chosen_features_model) == 0:
+        X_train = X[['Age', 'Year']]
+    else:
+        X_train = X[chosen_features_model]
+
+    # Fit forest
+    print(X_train[0:3])
+    forest.fit(X_train, y)
+
+    #train model and output datatable
+
+    scores = cross_val_score(forest, X_train, y, cv=int(cross_validation))
+    print(scores)
+
+    list4 = []
+    list5 = []
+
+    for x in range(0, len(list(scores))):
+        list4.append(scores[x])
+        list5.append(str(x))
+
+    list5.append('Average')
+    list4.append(scores.mean())
+    list5.append('Standard Deviation')
+    list4.append(scores.std())
+    print(list4, list5)
+
+    df = pd.DataFrame({'Turn':list5, 'Score' : list4})
+    print(df)
+    return df.to_dict('records')
 
 newsReviews = html.Div([  # page 6
 
         html.Div([
 
             # Header
-
+        html.Div([
             get_logo(),
             get_header(),
             html.Br([]),
             get_menu(),
 
-            # Row 1
-
-            html.Div([
-
-                html.Div([
-                    html.H6('Vanguard News',
-                            className="gs-header gs-text-header padded"),
-                    html.Br([]),
-                    html.P('10/25/16    The rise of indexing and the fall of costs'),
-                    html.Br([]),
-                    html.P("08/31/16    It's the index mutual fund's 40th anniversary: Let the low-cost, passive party begin")
-                ], className="six columns"),
-
-                html.Div([
-                    html.H6("Reviews",
-                            className="gs-header gs-table-header padded"),
-                    html.Br([]),
-                    html.Li('Launched in 1976.'),
-                    html.Li('On average, has historically produced returns that have far outpaced the rate of inflation.*'),
-                    html.Li("Vanguard Quantitative Equity Group, the fund's advisor, is among the world's largest equity index managers."),
-                    html.Br([]),
-                    html.P("Did you know? The fund launched in 1976 as Vanguard First Index Investment Trust—the nation's first index fund available to individual investors."),
-                    html.Br([]),
-                    html.P("* The performance of an index is not an exact representation of any particular investment, as you cannot invest directly in an index."),
-                    html.Br([]),
-                    html.P("Past performance is no guarantee of future returns. See performance data current to the most recent month-end.")
-                ], className="six columns"),
 
             ], className="row ")
 
@@ -930,7 +855,6 @@ def display_page(pathname):
 external_css = ["https://cdnjs.cloudflare.com/ajax/libs/normalize/7.0.0/normalize.min.css",
                 "https://cdnjs.cloudflare.com/ajax/libs/skeleton/2.0.4/skeleton.min.css",
                 "//fonts.googleapis.com/css?family=Raleway:400,300,600",
-                #"https://codepen.io/bcd/pen/KQrXdb.css",
                 "https://codepen.io/gielderks/pen/odryNY.css",
                 "https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"]
 
