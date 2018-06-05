@@ -10,6 +10,7 @@ import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 import dash_table_experiments as dt
 from sklearn.model_selection import cross_val_score
+from sklearn.metrics import fbeta_score, make_scorer
 
 app = dash.Dash(__name__)
 server = app.server
@@ -630,11 +631,11 @@ distributions = html.Div([  # page 5
 
         html.Div([
 
-            html.Div([
+           html.Div([
 
             # Header
 
-            get_logo(),
+            #get_logo(),
             get_header(),
             html.Br([]),
             get_menu(),
@@ -657,40 +658,13 @@ distributions = html.Div([  # page 5
             html.Div([
 
                 html.Div([
-                    dcc.Dropdown(
-                        id='dropdown_n_estimators_model',
+                     html.H6(['Choose features to train model:']),
+                ], className="eight columns"),
 
-                        options=[
-                            {'label': '5', 'value': '5'},
-                            {'label': '10', 'value': '10'},
-                            {'label': '25', 'value': '25'},
-                            {'label': '50', 'value': '50'},
-                            {'label': '75', 'value': '75'},
-                            {'label': '100', 'value': '100'},
-                            {'label': '150', 'value': '150'},
-                            {'label': '200', 'value': '200'},
-                            {'label': '250', 'value': '250'},
-                        ],
-                        value='10')
-                ], className="three columns"),
+              ], className="row"),
 
-                dcc.Dropdown(
-                    id='tree_depth',
-                    options=[
-                        {'label': '5', 'value': '5'},
-                        {'label': '10', 'value': '10'},
-                        {'label': '25', 'value': '25'},
-                        {'label': '50', 'value': '50'},
-                        {'label': '75', 'value': '75'},
-                        {'label': '100', 'value': '100'},
-                        {'label': '150', 'value': '150'},
-                        {'label': '200', 'value': '200'},
-                        {'label': '250', 'value': '250'},
-                    ],
-                    value='10')
-            ], className="three columns"),
-
-
+                html.Br([]),
+            html.Div([
                 html.Div([
                     dcc.Dropdown(
                         id='chosen_features_model',
@@ -698,22 +672,72 @@ distributions = html.Div([  # page 5
                         multi=True,
                         value=['Age', 'Year']
                     )
-                ], className="six columns"),
+                ], className="eight columns"),
 
-         #   ], className="row "),
+            ], className='row'),
+
+            html.Br([]),
+
+            html.Div([
+                html.Div([
+
+                 html.H6(['N Estimators']),
+
+                ], className="two columns"),
+
+                html.Div([
+                    html.H6(['Max Tree Depth']),
+                ], className="two columns"),
+
+                html.Div([
+                    html.H6(['K-Fold Cross-Validation']),
+                ], className="two columns"),
+                html.Div([
+                    html.H6('', id='depth_text'),
+                ], className="three columns"),
+        ], className = 'row'),
+
+            html.Br([]),
 
             html.Div([
 
-                html.Div([
+                    html.Div([
 
-                    dcc.Slider(
-                        id='max_features_slider',
-                        min=2,
-                        max=150,
-                        step=1,
-                        value=2,
-                    )
-                ], className="four columns"),
+                        dcc.Dropdown(
+                            id='dropdown_n_estimators_model',
+                            options=[
+                                {'label': '5', 'value': '5'},
+                                {'label': '10', 'value': '10'},
+                                {'label': '25', 'value': '25'},
+                                {'label': '50', 'value': '50'},
+                                {'label': '75', 'value': '75'},
+                                {'label': '100', 'value': '100'},
+                                {'label': '150', 'value': '150'},
+                                {'label': '200', 'value': '200'},
+                                {'label': '250', 'value': '250'},
+                            ],
+                            value='10')
+
+                    ], className="two columns"),
+
+                    html.Div([
+
+                        dcc.Dropdown(
+                            id='max_depth_slider',
+                            options=[
+                                {'label': '5', 'value': '5'},
+                                {'label': '10', 'value': '10'},
+                                {'label': '25', 'value': '25'},
+                                {'label': '50', 'value': '50'},
+                                {'label': '75', 'value': '75'},
+                                {'label': '100', 'value': '100'},
+                                {'label': '150', 'value': '150'},
+                                {'label': '200', 'value': '200'},
+                                {'label': '250', 'value': '250'},
+                            ],
+                            value='10')
+
+                ] , className="two columns"),
 
                 html.Div([
 
@@ -724,7 +748,7 @@ distributions = html.Div([  # page 5
                             {'label': '10', 'value': '10'}],
                         value='10',
                     )
-                ], className="four columns"),
+                ], className="two columns"),
 
 
                 html.Div([
@@ -736,13 +760,21 @@ distributions = html.Div([  # page 5
                         step=1,
                         value=50,
                     )
-                ], className="four columns"),
+                ], className="three columns"),
+
+            ], className="row "),
+
+            html.Br([]),
+
+            html.Br([]),
 
             html.Div([
                 html.Div([
                     dt.DataTable(
-                        rows=pd.DataFrame({'test': [0,0,0]}).to_dict('records'),
-
+                        rows=pd.DataFrame({'Turn': ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'],
+                                           'Score': [0.7700404858299595, 0.8097165991902834, 0.7909238249594813, 0.7664233576642335, 0.7907542579075426, 0.7850770478507705, 0.7656123276561233, 0.7956204379562044, 0.7793998377939984, 0.7769667477696675]
+                                                }).to_dict('records'),
+                        columns=['Turn', 'Score'],
                         sortable=True,
                         editable=False,
                         filterable=False,
@@ -753,7 +785,9 @@ distributions = html.Div([  # page 5
 
             ], className="row "),
 
-            ], className="row "),
+            html.Br([]),
+
+
 
         ], className="subpage")
 
@@ -763,12 +797,11 @@ distributions = html.Div([  # page 5
     dash.dependencies.Output('DataTable_cv', 'rows'),
     [dash.dependencies.Input('max_leaf_nodes', 'value'),
      dash.dependencies.Input('max_depth_slider', 'value'),
-     dash.dependencies.Input('max_features_slider', 'value'),
      dash.dependencies.Input('chosen_features_model', 'value'),
      dash.dependencies.Input('dropdown_n_estimators_model', 'value'),
      dash.dependencies.Input('cross_validation', 'value')])
-def run_model(max_leaf_nodes, max_depth_slider, max_features_slider, chosen_features_model, dropdown_n_estimators_model, cross_validation):
-    print(max_leaf_nodes, max_depth_slider, max_features_slider, chosen_features_model, dropdown_n_estimators_model, cross_validation)
+def run_model(max_leaf_nodes, max_depth_slider, chosen_features_model, dropdown_n_estimators_model, cross_validation):
+    print(max_leaf_nodes, max_depth_slider, chosen_features_model, dropdown_n_estimators_model, cross_validation)
     print("hoi")
     # Build a forest and compute the feature importances
     forest = RandomForestClassifier(n_estimators=int(dropdown_n_estimators_model), class_weight='balanced')
@@ -785,25 +818,33 @@ def run_model(max_leaf_nodes, max_depth_slider, max_features_slider, chosen_feat
 
     #train model and output datatable
 
-    scores = cross_val_score(forest, X_train, y, cv=int(cross_validation))
+    ftwo_scorer = make_scorer(fbeta_score, beta=1)
+
+    scores = cross_val_score(forest, X_train, y, cv=int(cross_validation), scoring=ftwo_scorer)
     print(scores)
 
     list4 = []
     list5 = []
 
-    for x in range(0, len(list(scores))):
-        list4.append(scores[x])
+    for x in range(1, len(list(scores))+1):
+        list4.append(scores[x-1])
         list5.append(str(x))
 
-    list5.append('Average')
-    list4.append(scores.mean())
-    list5.append('Standard Deviation')
-    list4.append(scores.std())
-    print(list4, list5)
+    # list5.append('Average')
+    # list4.append(scores.mean())
+    # list5.append('Standard Deviation')
+    # list4.append(scores.std())
+    # print(list4, list5)
 
-    df = pd.DataFrame({'Turn':list5, 'Score' : list4})
-    print(df)
+    df = pd.DataFrame({'Turn' : list5,'Score':list4})
+    print(list(df['Turn']), list(df['Score']))
     return df.to_dict('records')
+
+@app.callback(
+    dash.dependencies.Output('depth_text', 'children'),
+    [dash.dependencies.Input('max_leaf_nodes', 'value')])
+def update_slider1_test(value):
+    return 'Max Leaf Nodes = {} Splits'.format(str(value))
 
 newsReviews = html.Div([  # page 6
 
